@@ -20,8 +20,8 @@
     "c_kl": 1.0
   },
   "data": {
-    "training_files": "final_annotation_train.txt",
-    "validation_files": "final_annotation_val.txt",
+    "training_files": "/output/final_annotation_train.txt",
+    "validation_files": "/output/final_annotation_val.txt",
     "text_cleaners": [
       "chinese_cleaners"
     ],

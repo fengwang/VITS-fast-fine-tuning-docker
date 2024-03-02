@@ -12,7 +12,8 @@ import regex as re
 
 MATPLOTLIB_FLAG = False
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+#logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.basicConfig( format='%(asctime)s %(levelname)s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', filename='/output/utils.log', encoding='utf-8', level=logging.DEBUG )
 logger = logging
 
 
@@ -35,13 +36,13 @@ def tag_cjke(text):
     tagged_text = ""
     for s in sentences:
         #全为符号跳过
-        nu = re.sub(r'[\s\p{P}]+', '', s, flags=re.U).strip()   
+        nu = re.sub(r'[\s\p{P}]+', '', s, flags=re.U).strip()
         if len(nu)==0:
             continue
         s = re.sub(r'[()（）《》「」【】‘“”’]+', '', s)
         jp=re.findall(jp_pattern, s)
         #本句含日语字符判断为日语
-        if len(jp)>0:  
+        if len(jp)>0:
             prev_lang,tagged_jke=tag_jke(s,prev_lang)
             tagged_text +=tagged_jke
         else:
@@ -85,7 +86,7 @@ def tag_jke(text,prev_sentence=None):
 
         # 添加当前字符到标记文本中
         tagged_text += char
-    
+
     # 在最后一个语言的结尾添加对应的标记
     if prev_lang:
             tagged_text += tags[prev_lang]
@@ -102,7 +103,7 @@ def tag_cke(text,prev_sentence=None):
     prev_lang = None
     # 是否全略过未标签
     tagged=0
-    
+
     # 遍历文本
     for char in text:
         # 判断当前字符属于哪种语言
@@ -133,7 +134,7 @@ def tag_cke(text,prev_sentence=None):
 
         # 添加当前字符到标记文本中
         tagged_text += char
-    
+
     # 在最后一个语言的结尾添加对应的标记
     if prev_lang:
             tagged_text += tags[prev_lang]
@@ -306,27 +307,27 @@ def str2bool(v):
 
 def get_hparams(init=True):
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', type=str, default="./configs/modified_finetune_speaker.json",
-                        help='JSON file for configuration')
-    parser.add_argument('-m', '--model', type=str, default="pretrained_models",
-                        help='Model name')
-    parser.add_argument('-n', '--max_epochs', type=int, default=50,
-                        help='finetune epochs')
+    parser.add_argument('-c', '--config', type=str, default="/configs/modified_finetune_speaker.json", help='JSON file for configuration')
+    parser.add_argument('-m', '--model', type=str, default="pretrained_models", help='Model name')
+    parser.add_argument('-n', '--max_epochs', type=int, default=100, help='finetune epochs')
     parser.add_argument('--cont', type=str2bool, default=False, help='whether to continue training on the latest checkpoint')
-    parser.add_argument('--drop_speaker_embed', type=str2bool, default=False, help='whether to drop existing characters')
-    parser.add_argument('--train_with_pretrained_model', type=str2bool, default=True,
-                        help='whether to train with pretrained model')
-    parser.add_argument('--preserved', type=int, default=4,
-                        help='Number of preserved models')
+    parser.add_argument('--drop_speaker_embed', type=str2bool, default=True, help='whether to drop existing characters')
+    parser.add_argument('--train_with_pretrained_model', type=str2bool, default=True, help='whether to train with pretrained model')
+    parser.add_argument('--preserved', type=int, default=4, help='Number of preserved models')
 
     args = parser.parse_args()
-    model_dir = os.path.join("./", args.model)
+    #model_dir = os.path.join("./", args.model)
+    model_dir = '/output/model'
 
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
+        print( f'create folder {model_dir}' )
 
     config_path = args.config
+    print( f'{config_path=}' )
     config_save_path = os.path.join(model_dir, "config.json")
+    print( f'{config_save_path=}' )
+
     if init:
         with open(config_path, "r") as f:
             data = f.read()
@@ -337,13 +338,20 @@ def get_hparams(init=True):
             data = f.read()
     config = json.loads(data)
 
+    print( f'loaded {data=}' )
+
     hparams = HParams(**config)
     hparams.model_dir = model_dir
+    print( f'{hparams.model_dir=}' )
     hparams.max_epochs = args.max_epochs
+    print( f'{hparams.max_epochs=}' )
     hparams.cont = args.cont
+    print( f'{hparams.cont=}' )
     hparams.drop_speaker_embed = args.drop_speaker_embed
     hparams.train_with_pretrained_model = args.train_with_pretrained_model
     hparams.preserved = args.preserved
+
+
     return hparams
 
 

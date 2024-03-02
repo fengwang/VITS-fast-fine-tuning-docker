@@ -38,6 +38,7 @@ from losses import (
 )
 from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 
+logging.basicConfig( format='%(asctime)s %(levelname)s: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', filename='/output/finetune_speaker_v2.log', encoding='utf-8', level=logging.DEBUG )
 
 torch.backends.cudnn.benchmark = True
 global_step = 0
@@ -75,12 +76,12 @@ def run(rank, n_gpus, hps):
       train_dataset,
       hps.train.batch_size,
       [32,300,400,500,600,700,800,900,1000],
+      #[32,256,384,512,640,768,896,1024,1152],
       num_replicas=n_gpus,
       rank=rank,
       shuffle=True)
   collate_fn = TextAudioSpeakerCollate()
-  train_loader = DataLoader(train_dataset, num_workers=2, shuffle=False, pin_memory=True,
-      collate_fn=collate_fn, batch_sampler=train_sampler)
+  train_loader = DataLoader(train_dataset, num_workers=2, shuffle=False, pin_memory=True, collate_fn=collate_fn, batch_sampler=train_sampler)
   # train_loader = DataLoader(train_dataset, batch_size=hps.train.batch_size, num_workers=2, shuffle=False, pin_memory=True,
   #                           collate_fn=collate_fn)
   if rank == 0:
@@ -107,8 +108,8 @@ def run(rank, n_gpus, hps):
           print("Failed to find latest checkpoint, loading G_0.pth...")
           if hps.train_with_pretrained_model:
               print("Train with pretrained model...")
-              _, _, _, epoch_str = utils.load_checkpoint("./pretrained_models/G_0.pth", net_g, None)
-              _, _, _, epoch_str = utils.load_checkpoint("./pretrained_models/D_0.pth", net_d, None)
+              _, _, _, epoch_str = utils.load_checkpoint("/pretrained_models/G_0.pth", net_g, None)
+              _, _, _, epoch_str = utils.load_checkpoint("/pretrained_models/D_0.pth", net_d, None)
           else:
               print("Train without pretrained model...")
           epoch_str = 1
@@ -116,8 +117,8 @@ def run(rank, n_gpus, hps):
   else:
       if hps.train_with_pretrained_model:
           print("Train with pretrained model...")
-          _, _, _, epoch_str = utils.load_checkpoint("./pretrained_models/G_0.pth", net_g, None)
-          _, _, _, epoch_str = utils.load_checkpoint("./pretrained_models/D_0.pth", net_d, None)
+          _, _, _, epoch_str = utils.load_checkpoint("/pretrained_models/G_0.pth", net_g, None)
+          _, _, _, epoch_str = utils.load_checkpoint("/pretrained_models/D_0.pth", net_d, None)
       else:
           print("Train without pretrained model...")
       epoch_str = 1
@@ -260,26 +261,20 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
 
       if global_step % hps.train.eval_interval == 0:
         evaluate(hps, net_g, eval_loader, writer_eval)
-        
-        utils.save_checkpoint(net_g, None, hps.train.learning_rate, epoch,
-                              os.path.join(hps.model_dir, "G_latest.pth"))
-        
-        utils.save_checkpoint(net_d, None, hps.train.learning_rate, epoch,
-                              os.path.join(hps.model_dir, "D_latest.pth"))
+
+        utils.save_checkpoint(net_g, None, hps.train.learning_rate, epoch, os.path.join(hps.model_dir, "G_latest.pth"))
+        utils.save_checkpoint(net_d, None, hps.train.learning_rate, epoch, os.path.join(hps.model_dir, "D_latest.pth"))
+        '''
         # save to google drive
         if os.path.exists("/content/drive/MyDrive/"):
-            utils.save_checkpoint(net_g, None, hps.train.learning_rate, epoch,
-                                  os.path.join("/content/drive/MyDrive/", "G_latest.pth"))
+            utils.save_checkpoint(net_g, None, hps.train.learning_rate, epoch, os.path.join("/content/drive/MyDrive/", "G_latest.pth"))
+            utils.save_checkpoint(net_d, None, hps.train.learning_rate, epoch, os.path.join("/content/drive/MyDrive/", "D_latest.pth"))
+        '''
 
-            utils.save_checkpoint(net_d, None, hps.train.learning_rate, epoch,
-                                  os.path.join("/content/drive/MyDrive/", "D_latest.pth"))
         if hps.preserved > 0:
-          utils.save_checkpoint(net_g, None, hps.train.learning_rate, epoch,
-                                  os.path.join(hps.model_dir, "G_{}.pth".format(global_step)))
-          utils.save_checkpoint(net_d, None, hps.train.learning_rate, epoch,
-                                  os.path.join(hps.model_dir, "D_{}.pth".format(global_step)))
-          old_g = utils.oldest_checkpoint_path(hps.model_dir, "G_[0-9]*.pth",
-                                               preserved=hps.preserved)  # Preserve 4 (default) historical checkpoints.
+          utils.save_checkpoint(net_g, None, hps.train.learning_rate, epoch, os.path.join(hps.model_dir, "G_{}.pth".format(global_step)))
+          utils.save_checkpoint(net_d, None, hps.train.learning_rate, epoch, os.path.join(hps.model_dir, "D_{}.pth".format(global_step)))
+          old_g = utils.oldest_checkpoint_path(hps.model_dir, "G_[0-9]*.pth", preserved=hps.preserved)  # Preserve 4 (default) historical checkpoints.
           old_d = utils.oldest_checkpoint_path(hps.model_dir, "D_[0-9]*.pth", preserved=hps.preserved)
           if os.path.exists(old_g):
             print(f"remove {old_g}")
@@ -287,6 +282,7 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
           if os.path.exists(old_d):
             print(f"remove {old_d}")
             os.remove(old_d)
+          '''
           if os.path.exists("/content/drive/MyDrive/"):
               utils.save_checkpoint(net_g, None, hps.train.learning_rate, epoch,
                                     os.path.join("/content/drive/MyDrive/", "G_{}.pth".format(global_step)))
@@ -301,6 +297,7 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
               if os.path.exists(old_d):
                   print(f"remove {old_d}")
                   os.remove(old_d)
+          '''
     global_step += 1
     if epoch > hps.max_epochs:
         print("Maximum epoch reached, closing training...")

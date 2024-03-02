@@ -13,6 +13,10 @@ from text import text_to_sequence, cleaned_text_to_sequence
 """Multi speaker version"""
 
 
+import logging
+
+
+
 class TextAudioSpeakerLoader(torch.utils.data.Dataset):
     """
         1) loads audio, speaker_id, text pairs
@@ -21,6 +25,7 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
     """
 
     def __init__(self, audiopaths_sid_text, hparams, symbols):
+        logging.info( f'TextAudioSpeakerLoader initialized with {audiopaths_sid_text=}' )
         self.audiopaths_sid_text = load_filepaths_and_text(audiopaths_sid_text)
         self.text_cleaners = hparams.text_cleaners
         self.max_wav_value = hparams.max_wav_value
@@ -195,7 +200,7 @@ class DistributedBucketSampler(torch.utils.data.distributed.DistributedSampler):
             if idx_bucket != -1:
                 buckets[idx_bucket].append(i)
 
-        try: 
+        try:
             for i in range(len(buckets) - 1, 0, -1):
                 if len(buckets[i]) == 0:
                     buckets.pop(i)
