@@ -18,7 +18,7 @@ RUN rm -rf /usr/bin/python3 && ln -s /usr/bin/python3.11 /usr/bin/python3
 
 # install python packages
 RUN python3.11 -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-RUN python3.11 -m pip install imageio moviepy Cython librosa scikit-learn scipy tensorboard unidecode pyopenjtalk jamo pypinyin jieba protobuf cn2an inflect eng_to_ipa ko_pron indic_transliteration num_thai opencc demucs openai-whisper gradio
+RUN python3.11 -m pip install imageio moviepy Cython librosa==0.9.2 scikit-learn scipy tensorboard unidecode pyopenjtalk jamo pypinyin jieba protobuf cn2an inflect eng_to_ipa ko_pron indic_transliteration num_thai opencc demucs openai-whisper gradio
 
 RUN git clone https://github.com/Plachtaa/VITS-fast-fine-tuning.git --depth 1 /workspace/VITS-fast-fine-tuning
 RUN mkdir -p /workspace/VITS-fast-fine-tuning/monotonic_align/monotonic_align
@@ -39,9 +39,29 @@ RUN wget https://huggingface.co/spaces/Plachta/VITS-Umamusume-voice-synthesizer/
 RUN wget https://huggingface.co/spaces/Plachta/VITS-Umamusume-voice-synthesizer/resolve/main/pretrained_models/G_trilingual.pth -O ./pretrained_models/G_0.pth
 RUN wget https://huggingface.co/spaces/Plachta/VITS-Umamusume-voice-synthesizer/resolve/main/configs/uma_trilingual.json -O ./configs/finetune_speaker.json
 
+
+
+
 # add script
 WORKDIR /app
 ADD scripts/convert_long_audio_to_wave.py .
+
+
+
+WORKDIR /workspace/VITS-fast-fine-tuning
+# pipeline:
+# 0. suppose all input files are in /input and output model is in /output
+#    - input: /input/说话人名称_xxxxx.wav
+#    - input: /input/说话人名称_yyyyy.wav
+#    in range [0, 999999]
+# 1. convert long audio to wave, example command: `python3 /app/convert_long_audio_to_wave.py /input /workspace/VITS-fast-fine-tuning/denoised_audio/`
+# 2. process all wav files with whipser model, example command: `cd /workspace/VITS-fast-fine-tuning && python scripts/long_audio_transcribe.py --whisper_size large` or large-v2 or large-v3?
+# 3. process all text data, example command: `python preprocess_v2.py`
+# 3.5. change batch size in config
+# 4. start training, example command: `python finetune_speaker_v2.py -m /output --max_epochs "{Maximum_epochs}" --drop_speaker_embed True`
+#                                  or `python finetune_speaker_v2.py -m /output --max_epochs "{Maximum_epochs}" --drop_speaker_embed False --cont True` to continue the training
+# 5. vc inference, example command: `python VC_inference.py --model_dir ./OUTPUT_MODEL/G_latest.pth --share True`
+# 6. command inference, example command: `python cmd_inference.py -m 模型路径/output/xxx -c 配置文件路径/output/config.json -o 输出文件路径 -l 输入的语言 -t 输入文本 -s 合成目标说话人名称`
 
 
 
