@@ -43,7 +43,7 @@ in which there is only one speaker whose name is `yqt`, and there are four audio
 Suppose we will save the fine-tuned model to `/data/vits/model_yqt`, the following command is supposed to be:
 
 ```bash
-ocker run --rm -it --gpus all --shm-size=16g -v :/data/vits/trainingset_1/audios:/input -v /data/vits/model_yqt:/output vits sh /workspace/VITS-fast-fine-tuning/scripts/run.sh
+ocker run --rm -it --gpus all --shm-size=16g -v /data/vits/trainingset_1/audios:/input -v /data/vits/model_yqt:/output vits sh /workspace/VITS-fast-fine-tuning/scripts/run.sh
 ```
 
 After finetuning, the model will be saved to `/data/vits/model_yqt/model` (the `/output/model` directory in the docker).
@@ -76,6 +76,7 @@ After finetuning, the model will be saved to `/data/vits/model_yqt/model` (the `
 
 
 Note that:
+0. a decent nvidia gpu is required;
 1. if `G_latest.pth` and `D_latest.pth` exist in the `/output/model` director in the docker, the model will be continuously finetuned from that checkpoint.
 2. the `config.json` file can be re-mapped to `/config/config.json` to adjust your custom configuration.
 
