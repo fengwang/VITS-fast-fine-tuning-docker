@@ -22,6 +22,7 @@ RUN rm -rf /usr/bin/python3 && ln -s /usr/bin/python3.11 /usr/bin/python3
 RUN python3.11 -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 RUN python3.11 -m pip install imageio moviepy Cython librosa==0.9.2 scikit-learn scipy tensorboard unidecode pyopenjtalk jamo pypinyin jieba protobuf cn2an inflect eng_to_ipa ko_pron indic_transliteration num_thai opencc demucs openai-whisper gradio
 RUN python3.11 -m pip install ffmpeg-python
+RUN python3.11 -m pip install onnx
 
 
 # copy repo to workspace

@@ -1,62 +1,102 @@
-[中文文档请点击这里](https://github.com/Plachtaa/VITS-fast-fine-tuning/blob/main/README_ZH.md)
-# VITS Fast Fine-tuning
-This repo will guide you to add your own character voices, or even your own voice, into existing VITS TTS model
-to make it able to do the following tasks in less than 1 hour:  
+# VITS Fast Tuning Docker
 
-1. Many-to-many voice conversion between any characters you added & preset characters in the model.
-2. English, Japanese & Chinese Text-to-Speech synthesis with the characters you added & preset characters  
-  
-
-Welcome to play around with the base models!  
-Chinese & English & Japanese：[![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/Plachta/VITS-Umamusume-voice-synthesizer) Author: Me  
-
-Chinese & Japanese：[![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/sayashi/vits-uma-genshin-honkai) Author: [SayaSS](https://github.com/SayaSS)  
-
-Chinese only：(No running huggingface spaces) Author: [Wwwwhy230825](https://github.com/Wwwwhy230825)
+VITS finetunining docker for fast speaker adaption TTS.
 
 
-### Currently Supported Tasks:
-- [x] Clone character voice from 10+ short audios
-- [x] Clone character voice from long audio(s) >= 3 minutes (one audio should contain single speaker only)
-- [x] Clone character voice from videos(s) >= 3 minutes (one video should contain single speaker only)
-- [x] Clone character voice from BILIBILI video links (one video should contain single speaker only)
+## Quick start
 
-### Currently Supported Characters for TTS & VC:
-- [x] Any character you wish as long as you have their voices!
-(Note that voice conversion can only be conducted between any two speakers in the model)
+### Step 1: Download the latest VITS Fast Tuning Docker image
 
-
-
-## Fine-tuning
-See [LOCAL.md](https://github.com/Plachtaa/VITS-fast-fine-tuning/blob/main/LOCAL.md) for local training guide.  
-Alternatively, you can perform fine-tuning on [Google Colab](https://colab.research.google.com/drive/1pn1xnFfdLK63gVXDwV4zCXfVeo8c-I-0?usp=sharing)
-
-
-### How long does it take? 
-1. Install dependencies (3 min)
-2. Choose pretrained model to start. The detailed differences between them are described in [Colab Notebook](https://colab.research.google.com/drive/1pn1xnFfdLK63gVXDwV4zCXfVeo8c-I-0?usp=sharing)
-3. Upload the voice samples of the characters you wish to add，see [DATA.MD](https://github.com/Plachtaa/VITS-fast-fine-tuning/blob/main/DATA_EN.MD) for detailed uploading options.
-4. Start fine-tuning. Time taken varies from 20 minutes ~ 2 hours, depending on the number of voices you uploaded.
-
-
-## Inference or Usage (Currently support Windows only)
-0. Remember to download your fine-tuned model!
-1. Download the latest release
-2. Put your model & config file into the folder `inference`, which are named `G_latest.pth` and `finetune_speaker.json`, respectively.
-3. The file structure should be as follows:
+```bash
+docker pull ljxha471758/vits-fast-tuning
 ```
-inference
-├───inference.exe
-├───...
-├───finetune_speaker.json
-└───G_latest.pth
+
+Or build it up from source:
+
+```bash
+git clone https://github.com/fengwang/VITS-fast-fine-tuning-docker.git
+cd VITS-fast-fine-tuning-docker
+mkdir ./pretrained_models
+wget https://huggingface.co/spaces/Plachta/VITS-Umamusume-voice-synthesizer/resolve/main/pretrained_models/D_trilingual.pth -O ./pretrained_models/D_0.pth
+wget https://huggingface.co/spaces/Plachta/VITS-Umamusume-voice-synthesizer/resolve/main/pretrained_models/G_trilingual.pth -O ./pretrained_models/G_0.pth
+docker build --file ./Dockerfile . -t vits
 ```
-4. run `inference.exe`, the browser should pop up automatically.
-5. Note: you must install `ffmpeg` to enable voice conversion feature.
 
-## Use in MoeGoe
-0. Prepare downloaded model & config file, which are named `G_latest.pth` and `moegoe_config.json`, respectively.
-1. Follow [MoeGoe](https://github.com/CjangCjengh/MoeGoe) page instructions to install, configure path, and use.
+### Step 2: Prepare audios for finetunining
 
-## Looking for help?
-If you have any questions, please feel free to open an [issue](https://github.com/Plachtaa/VITS-fast-fine-tuning/issues/new) or join our [Discord](https://discord.gg/TcrjDFvm5A) server.
+Rename all audios in a folder with the speaker name and a random number in the file name. For example, if there are two audios for speaker A, rename them as speaker_A_0.wav and speaker_A_1.wav.
+A typical audio folder structure looks like:
+
+```
+/data/vits/trainingset_1/audios
+├── yqt_102.mp3
+├── yqt_214.mp3
+├── yqt_23.mp3
+└── yqt_9.mp3
+```
+
+in which there is only one speaker whose name is `yqt`, and there are four audios from her. Note that the audio file format can be arbitrary, but should be preprocessiable by ffmpeg.
+
+
+### Step 3: Start finetunining
+
+Suppose we will save the fine-tuned model to `/data/vits/model_yqt`, the following command is supposed to be:
+
+```bash
+ocker run --rm -it --gpus all --shm-size=16g -v :/data/vits/trainingset_1/audios:/input -v /data/vits/model_yqt:/output vits sh /workspace/VITS-fast-fine-tuning/scripts/run.sh
+```
+
+After finetuning, the model will be saved to `/data/vits/model_yqt/model` (the `/output/model` directory in the docker).
+
+```
+/data/vits/model_yqt/model
+├── config.json
+├── D_320.pth
+├── D_330.pth
+├── D_340.pth
+├── D_350.pth
+├── D_latest.pth
+├── eval
+│   └── events.out.tfevents.1709492024.055cbe3d6178.400.1
+├── events.out.tfevents.1709492024.055cbe3d6178.400.0
+├── G_320.pth
+├── G_330.pth
+├── G_340.pth
+├── G_350.pth
+├── githash
+├── G_latest.onnx
+├── G_latest.pth
+├── lexicon.txt
+├── rule.fst
+├── tokens.txt
+└── train.log
+
+2 directories, 19 files
+```
+
+
+Note that:
+1. if `G_latest.pth` and `D_latest.pth` exist in the `/output/model` director in the docker, the model will be continuously finetuned from that checkpoint.
+2. the `config.json` file can be re-mapped to `/config/config.json` to adjust your custom configuration.
+
+
+### Step 4: Start inference
+
+The exported ONNX model can be inference using [sherpa framework](https://k2-fsa.github.io/sherpa/onnx/tts/pretrained_models/vits.html#csukuangfj-vits-zh-hf-fanchen-c-chinese-1-female). Inferencing method using PyTorch will be added in the future.
+
+
+
+
+## Acknowledgements
++ [Vits-Fast-Fine-Tuning](https://github.com/Plachtaa/VITS-fast-fine-tuning)
+
+
+## License
+
++ [Apache License 2.0](https://github.com/fengwang/VITS-fast-fine-tuning-docker/blob/main/LICENSE)
+
+
+
+
+
+

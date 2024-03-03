@@ -57,8 +57,9 @@ if __name__ == "__main__":
     # overwrite speaker names
     hps['speakers'] = speaker2id
     hps['train']['log_interval'] = 10
-    hps['train']['eval_interval'] = 100
-    hps['train']['batch_size'] = 16
+    hps['train']['eval_interval'] = 10
+    hps['train']['batch_size'] = 32
+    hps['train']['epochs'] = 10
     hps['data']['training_files'] = "/output/final_annotation_train.txt"
     hps['data']['validation_files'] = "/output/final_annotation_val.txt"
     # save modified config

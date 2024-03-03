@@ -40,8 +40,8 @@ if __name__ == "__main__":
         hps = json.load(f)
     target_sr = hps['data']['sampling_rate']
     #model = whisper.load_model(args.whisper_size)
-    #model = whisper.load_model('large-v3', device='cuda') # enforcing gpu
-    model = whisper.load_model('tiny', device='cuda') # for testing
+    model = whisper.load_model('large-v3', device='cuda') # enforcing gpu
+    #model = whisper.load_model('tiny', device='cuda') # for testing
     speaker_annos = []
     for file in filelist:
         print(f"transcribing {parent_dir + file}...\n")
